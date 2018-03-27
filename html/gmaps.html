@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dot</title>
+  <link rel="icon" href="file:///C:/Users/ericzgy/OneDrive/UVA/First%20Year/Spring%20Semester/Dot/html/dot12.png"m type="image/gif" sizes="32x32">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="../css/gmaps-sidebar.css" />
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body, #map {
+      height: 100%;
+      font: 10pt "Helvetica Neue", Arial, Helvetica, sans-serif;
+    }
+
+    .lorem {
+      font-style: italic;
+      color: #AAA;
+    }
+  </style>
+</head>
+<body onload="initialize()">
+  <div class="navbar">
+  <a href="https://notonourgrounds.virginia.edu/"><img src="file:///C:/Users/ericzgy/OneDrive/UVA/First%20Year/Spring%20Semester/Dot/html/dot11.png" class="hey" style="display: inline-block;padding-bottom: 55px;"></a>
+  </div>
+  <div id="search_location">
+    <span style="display: inline-block;color:#232D4B;margin-left: 15px;" id="important"><h1>Dot.</h1></span>
+  </div>
+  <label class="switch" id="my_button">
+    <input type="checkbox" onclick='changeDot'>
+    <span class="slider round"></span>
+  </label> 
+  <div id="sidebar" class="sidebar collapsed">
+    <!-- Nav tabs -->
+    <div class="sidebar-tabs">
+      <ul role="tablist">
+        <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
+        <li><a href="#profile" role="tab"><i class="fa fa-user"></i></a></li>
+      </ul>
+    </div>
+
+    <!-- Tab panes -->
+    <div class="sidebar-content">
+      <div class="sidebar-pane" id="home">
+        <h2 class="sidebar-header">
+          About Us
+          <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+        </h2>
+
+        <h4>What is a <span style="color: #4CBB17;text-decoration: underline;">Green Dot</span>?</h4>
+
+        <p>The Green Dot Iniative is a program startedby the university to promote a healthier community free of abuse and violence. The way that it works is that when a good deed is done, such as walking someone home or taking care of them, that is a green dot. When something bad occurs such as harassment or sexual assault, then that is a red dot. Green Dots are used around grounds as a way to demonstrate the compassion we have as human beings.</p>
+
+        <br>
+        <br>
+        <h4>How to use <span style="text-decoration: underline;">Dot.</span></h4>
+
+        <p>Dot. is an interactive web application designed to allow users to map/track green and red dot situations. The user simply turns the slider in the top right from red to green, or vice-versa, and plots a point on the local map of his/her campus. This allows members of the community to map/track green and red dot situations. People can also click on map markers to see desciptions of the event and share their own experience. Feel free to use to search feature too to investigate any areas you're curious about!</p>
+      </div>
+      <div class="sidebar-pane" id="profile">
+        <h2 class="sidebar-header">
+          Inquiry
+          <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+        </h2>
+        <p class="lorem">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p>
+
+
+      </div>
+      <div id="form">
+       <table>
+        <tr><td>Comments:</td> <td><input type='text' id='comments'/> </td> </tr>
+        <tr><td></td><td><input type='button' value='Save' onclick='saveData()'/></td></tr>
+      </table>
+    </div>
+  </div>  
+</div>
+<div id="map" class="sidebar-map"></div>
+
+<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script src="../js/jquery-sidebar.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyClInXgD2vLPgi-IW7tMGtMka7kNr1GYk4&callback=initMap"
+type="text/javascript"></script>
+
+
+<script>
+
+  let map;
+  let marker;
+  let markercok;
+  let addwindow;
+  let addedMarkerWindow;
+  let isGreen = true;
+
+    //initialize firebase
+    let config = {
+      apiKey: "AIzaSyDs1hGPLdkY_ASaf6Bvi3ZOaw55gPqY_Ok",
+      authDomain: "reddotgreendot-cd063.firebaseapp.com",
+      databaseURL: "https://reddotgreendot-cd063.firebaseio.com",
+      projectId: "reddotgreendot-cd063",
+      storageBucket: "reddotgreendot-cd063.appspot.com",
+      messagingSenderId: "8614025665"
+    };
+    firebase.initializeApp(config);
+
+      //when button in toggles it switches the value of the marker
+      function changeDot(){
+       isGreen = !isGreen;
+     }
+
+     function initMap() {
+      var uva = {lat: 38.0336, lng: -78.5080};
+      map = new google.maps.Map(document.getElementById('map'), {
+       center: uva,
+       zoom: 17
+     });
+
+      addwindow = new google.maps.InfoWindow({
+       content: document.getElementById('form')
+     });
+
+
+
+
+       //if map is double clicked creates a marker at the position and opens up a add pop up
+       google.maps.event.addListener(map, 'dblclick', function(event) {
+
+         if(isGreen){
+           marker = new google.maps.Marker({
+             position: event.latLng,
+             icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+             map: map
+           });  
+         }
+         else{
+           marker = new google.maps.Marker({
+             position: event.latLng,
+             map: map
+           });   
+         }
+
+         addwindow.open(map, marker)
+       });
+       $(document).dblclick(function(){
+        $('#form').toggle();
+      });
+       //if marker is clicked open up message window
+       google.maps.event.addListener(markercok, 'click', function(event) {
+        let commentsOnPoint = getComments(event.latLng.lat().toFixed(3), event.latLng.lng().toFixed(3));
+        addedMarkerWindow = new google.maps.InfoWindow()
+        addedMarkerWindow.setContent(commentsOnPoint);
+        addedMarkerWindwo.open(map,markercok);
+      });
+
+
+     }
+ // when save is clicked, get position data and comment and save to database and close window
+ function saveData() {
+   let lng = marker.getPosition().lng().toFixed(3);
+   let lat = marker.getPosition().lat().toFixed(3);
+   let comment = "";
+   comment = document.getElementById('comments').value;
+   addNewMarker(isGreen,lng,lat,comment);
+   addwindow.close();
+ }
+
+
+   // adds a marker to the firbase database
+   function addNewMarker(isGreen, long, lat, com){
+     let database = firebase.database();
+     let locationRef;
+
+     if(isGreen == true){
+       locationRef = database.ref('green');
+     }
+     else{
+       locationRef = database.ref('red');
+     }
+
+
+     let newMarker = {
+       longitude: long,
+       latitude : lat,
+       comment: com
+     };
+
+     let result = locationRef.push(newMarker);
+
+   }
+
+
+   function addMarkerToMap(isGreen, long, lat, com){
+    let latandLong = {lat: lat, lng: long};
+
+    if(isGreen == true){
+      marker = new google.maps.Marker({
+        position: latandLong,
+        icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+        map: map
+      });
+    }
+    else{
+      marker = new google.maps.Marker({
+        position: latandLong,
+        map: map
+      }); 
+    }
+
+
+  }
+
+
+  let comment = [];
+  let lat = [];
+  let long = [];
+  let numOfMark = 0
+
+  function addGreenOldPointers() {
+    firebase
+    .database()
+    .ref("/green")
+    .once("value")
+    .then(snapshot => {
+      let count2 = 0;
+
+      for(let property in snapshot.val()){
+       numOfMark++;
+       let key = property;
+       firebase
+       .database()
+       .ref("/green/" + property)
+       .once("value")
+       .then(snapshots => {
+         let count = 0;
+         for (var property1 in snapshots.val()) {
+
+           if(count == 0){
+             comment.push(snapshots.val()[property1]);
+             count++;
+           }
+           else if(count == 1){
+             lat.push(snapshots.val()[property1]);
+             count++;
+           }
+           else if (count == 2){
+             long.push(snapshots.val()[property1]);
+             count = 0;
+           }
+         }
+         count2++;
+
+         if(numOfMark == count2){
+                       for (let i = 0; i < numOfMark; i++) { //the loop that gets all the individual data
+                         addMarkerToMap(true, long[i], lat[i], comment[i]);
+                       }
+                     }
+                   })
+     }})
+    .catch(error => {
+     console.log(error);
+   });
+  }
+
+
+  let commentred = [];
+  let latred = [];
+  let longred = [];
+  let numOfMarkred = 0
+
+  function addRedOldPointers() {
+   firebase
+   .database()
+   .ref("/red")
+   .once("value")
+   .then(snapshot => {
+    let count2red = 0;
+
+    for(let property in snapshot.val()){
+     numOfMarkred++;
+     let key = property;
+     firebase
+     .database()
+     .ref("/red/" + property)
+     .once("value")
+     .then(snapshots => {
+       let count = 0;
+       for (var property1 in snapshots.val()) {
+
+         if(count == 0){
+           commentred.push(snapshots.val()[property1]);
+           count++;
+         }
+         else if(count == 1){
+           latred.push(snapshots.val()[property1]);
+           count++;
+         }
+         else if (count == 2){
+           longred.push(snapshots.val()[property1]);
+           count = 0;
+         }
+       }
+       count2red++;
+
+       if(numOfMarkred == count2red){
+                       for (let i = 0; i < numOfMarkred; i++) { //the loop that gets all the individual data
+                         addMarkerToMap(false, longred[i], latred[i], commentred[i]);
+                       }
+                     }
+                   })
+   }})
+   .catch(error => {
+     console.log(error);
+   });
+ }
+
+ function getMatch(latEntry, longEntry){
+   //first go through red
+
+
+
+   let commentred = [];
+   let latred = [];
+   let longred = [];
+
+   let numOfMarkred = 0
+   function checkRed() {
+     firebase
+     .database()
+     .ref("/red")
+     .once("value")
+     .then(snapshot => {
+       let count2red = 0;
+       for(let property in snapshot.val()){
+         numOfMarkred++;
+         let key = property;
+         firebase
+         .database()
+         .ref("/red/" + property)
+         .once("value")
+         .then(snapshots => {
+           let count = 0;
+           for (var property1 in snapshots.val()) {
+
+             if(count == 0){
+               commentred.push(snapshots.val()[property1]);
+               count++;
+             }
+             else if(count == 1){
+               latred.push(snapshots.val()[property1]);
+               count++;
+             }
+             else if (count == 2){
+               longred.push(snapshots.val()[property1]);
+               count = 0;
+             }
+           }
+           count2red++;
+
+           if(numOfMarkred == count2red){
+                           for (let i = 0; i < numOfMarkred; i++) { //the loop that gets all the individual data
+
+                             if(latred[i] == latEntry && longred[i] == longEntry){
+                               return(commentred[i]);
+                             }
+
+                           }
+                         }
+                       })
+       }})
+
+
+   }
+   checkRed();
+
+   //now check green
+   let comment = [];
+   let lat = [];
+   let long = [];
+
+   let numOfMark = 0
+   function checkgreen() {
+     firebase
+     .database()
+     .ref("/green")
+     .once("value")
+     .then(snapshot => {
+       let count2 = 0;
+
+       for(let property in snapshot.val()){
+         numOfMark++;
+         let key = property;
+         firebase
+         .database()
+         .ref("/green/" + property)
+         .once("value")
+         .then(snapshots => {
+           let count = 0;
+           for (var property1 in snapshots.val()) {
+
+             if(count == 0){
+               comment.push(snapshots.val()[property1]);
+               count++;
+             }
+             else if(count == 1){
+               lat.push(snapshots.val()[property1]);
+               count++;
+             }
+             else if (count == 2){
+               long.push(snapshots.val()[property1]);
+               count = 0;
+             }
+           }
+           count2++;
+
+           if(numOfMark == count2){
+                               for (let i = 0; i < numOfMark; i++) { //the loop that gets all the individual data
+
+                                 if(lat[i] == latEntry && long[i] == longEntry){
+                                   return(comment[i]);
+                                 }
+
+                               }
+                             }
+                           })
+       }})
+   }
+
+   checkgreen();
+
+ }
+
+
+
+//call my code here
+addGreenOldPointers();
+addRedOldPointers();
+
+
+function getComments(latEntry, longEntry){
+
+  returnStrings = [];
+
+  //first go through red
+  let commentred = [];
+  let latred = [];
+  let longred = [];
+
+  let numOfMarkred = 0
+  function checkRed() {
+    firebase
+    .database()
+    .ref("/red")
+    .once("value")
+    .then(snapshot => {
+      let count2red = 0;
+      for(let property in snapshot.val()){
+        numOfMarkred++;
+        let key = property;
+        firebase
+        .database()
+        .ref("/red/" + property)
+        .once("value")
+        .then(snapshots => {
+          let count = 0;
+          for (var property1 in snapshots.val()) {
+
+            if(count == 0){
+              commentred.push(snapshots.val()[property1]);
+              count++;
+            }
+            else if(count == 1){
+              latred.push(snapshots.val()[property1]);
+              count++;
+            }
+            else if (count == 2){
+              longred.push(snapshots.val()[property1]);
+              count = 0;
+            }
+          }
+          count2red++;
+
+          if(numOfMarkred == count2red){
+                          for (let i = 0; i < numOfMarkred; i++) { //the loop that gets all the individual data
+
+                            if(latred[i] == latEntry && longred[i] == longEntry){
+                              returnStrings.push(commentred[i]);
+                              console.log(returnStrings);
+                            }
+
+                          }
+                        }
+                      })
+      }})
+
+
+  }
+
+
+  //now check green
+  let comment = [];
+  let lat = [];
+  let long = [];
+
+  let numOfMark = 0
+  function checkgreen() {
+    firebase
+    .database()
+    .ref("/green")
+    .once("value")
+    .then(snapshot => {
+      let count2 = 0;
+
+      for(let property in snapshot.val()){
+        numOfMark++;
+        let key = property;
+        firebase
+        .database()
+        .ref("/green/" + property)
+        .once("value")
+        .then(snapshots => {
+          let count = 0;
+          for (var property1 in snapshots.val()) {
+
+            if(count == 0){
+              comment.push(snapshots.val()[property1]);
+              count++;
+            }
+            else if(count == 1){
+              lat.push(snapshots.val()[property1]);
+              count++;
+            }
+            else if (count == 2){
+              long.push(snapshots.val()[property1]);
+              count = 0;
+            }
+          }
+          count2++;
+
+          if(numOfMark == count2){
+                              for (let i = 0; i < numOfMark; i++) { //the loop that gets all the individual data
+
+                                if(lat[i] == latEntry && long[i] == longEntry){
+                                  returnStrings.push(comment[i]);
+                                  console.log(returnStrings);
+                                }
+
+                              }
+                            }
+                          })
+      }})
+  }
+
+  checkgreen();
+  checkRed();
+
+}
+
+
+
+
+
+var sidebar = $('#sidebar').sidebar();
+</script>
+
+</body>
+</html>
